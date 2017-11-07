@@ -47,7 +47,7 @@ new <- Sys.time() - old
 write.csv(q_result, "occ_q_result.csv", row.names = F)
 
 # Only those that have been cited
-cited <- alldata[!is.na(alldata$citing),]
+cited <- q_result[!is.na(q_result$citing),]
 
 cited_stats <- cited %>% 
   group_by(doi_queried) %>% 
