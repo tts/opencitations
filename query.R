@@ -2,10 +2,10 @@ library(SPARQL)
 library(tidyverse)
 library(rcrossref)
 
-#--A set of Aalto University publication DOI's from 2013-2016-------------------------------
+#--A set of Aalto University publication DOI's 2013-2015 from Virta service------------
 aaltodata <- read.csv("aalto_csc_cleaned_dois.csv", sep = "|", stringsAsFactors = F, quote = "")
 
-#--Query OpenCitations Corpus for citation counts-------------------------------------------
+#--Query OpenCitations Corpus for citation counts---------------------------------------
 
 doi_q_occ <- function(doi) {
   
@@ -39,14 +39,14 @@ doi_q_occ <- function(doi) {
   return(result_df)
 }
 
-# Can be done in one go like this (takes roughly an hour) but in practice, did in chunks (each 20 min)
+# Can be done in one go like this in roughly one hour but in fact did in 500 item chunks (each 20 min)
 old <- Sys.time()
 q_result <- map_df(aaltodata$doi, ~ doi_q_occ(.x))
 new <- Sys.time() - old
 
 write.csv(q_result, "occ_q_result.csv", row.names = F)
 
-# Only those that have been cited
+# Only those that have citation information at OCC
 cited <- q_result[!is.na(q_result$citing),]
 
 cited_stats <- cited %>% 
@@ -67,14 +67,14 @@ doi_q_crossref <- function(doi) {
 
 crossref_cites_df <- map_df(cited_stats$doi_queried, ~ doi_q_crossref(.x))
 doi_cites_df <- left_join(cited_stats, crossref_cites_df, by = c("doi_queried"="thisdoi"))
-names(doi_cites_df) <- c("doi", "OOC_cites", "About", "Crossref_cites")
+names(doi_cites_df) <- c("doi", "OCC_cites", "About", "Crossref_cites")
 
 doi_cites_df <- doi_cites_df %>% 
-  mutate(Perc = round(OOC_cites / as.integer(Crossref_cites) * 100, digits = 2)) %>% 
+  mutate(Perc = round(OCC_cites / as.integer(Crossref_cites) * 100, digits = 2)) %>% 
   arrange(Perc) %>% 
-  select(doi, About, OOC_cites, Crossref_cites, Perc)
+  select(doi, About, OCC_cites, Crossref_cites, Perc)
 
-# median(doi_cites_df$Perc)
+# median(doi_cites_df$Percentage)
 
 write.csv(doi_cites_df, "doi_cites_df.csv", row.names = FALSE)
 
